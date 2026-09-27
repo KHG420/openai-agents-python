@@ -13,6 +13,5 @@ def shell_tar_exclude_args(skip_relpaths: Iterable[Path]) -> list[str]:
         rel_posix = rel.as_posix().lstrip("/")
         if not rel_posix or rel_posix in {".", "/"}:
             continue
-        excludes.append(f"--exclude={shlex.quote(rel_posix)}")
         excludes.append(f"--exclude={shlex.quote(f'./{rel_posix}')}")
     return excludes

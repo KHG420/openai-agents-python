@@ -607,6 +607,23 @@ async def test_codex_exec_run_raises_on_non_zero_exit(
 
 
 @pytest.mark.asyncio
+async def test_codex_exec_run_preserves_non_utf8_stderr_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    process = FakeProcess(stdout_lines=[], stderr_chunks=[b'"node" \xa4\xa3\r\n'], returncode=1)
+
+    async def fake_create_subprocess_exec(*args: Any, **kwargs: Any) -> FakeProcess:
+        return process
+
+    monkeypatch.setattr(exec_module.asyncio, "create_subprocess_exec", fake_create_subprocess_exec)
+
+    exec_client = exec_module.CodexExec(executable_path="/bin/codex")
+    with pytest.raises(RuntimeError, match='Codex exec exited with code 1: "node"'):
+        async for _ in exec_client.run(exec_module.CodexExecArgs(input="hello")):
+            pass
+
+
+@pytest.mark.asyncio
 async def test_codex_exec_run_raises_without_stdin(monkeypatch: pytest.MonkeyPatch) -> None:
     process = FakeProcess(stdout_lines=[], stdin_present=False)
 
